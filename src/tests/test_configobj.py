@@ -752,7 +752,7 @@ class TestSectionBehavior:
             target_lines.append('data = ' + original)
         target = ConfigObj(target_lines, unrepr=True)
         source = ConfigObj(prefix + ["data = {'new': 2}"], unrepr=True)
-        source_before = source.dict()
+        source_before = copy.deepcopy(source.dict())
 
         target.merge(source)
 
@@ -784,6 +784,41 @@ class TestSectionBehavior:
         target = CustomConfigObj({'value': 'old'})
         target.merge({'value': 'new'})
         assert target['value'] == 'new'
+
+    def test_merging_dictionary_scalar_with_non_string_keys(self):
+        target = ConfigObj(["data = {}"], unrepr=True)
+        source = ConfigObj(["data = {1: {'nested': 2}}"], unrepr=True)
+
+        target.merge(source)
+
+        assert type(target['data']) is dict
+        assert target['data'] == {1: {'nested': 2}}
+        assert target.scalars == ['data']
+        assert not target.sections
+        assert ConfigObj(target.write(), unrepr=True).dict() == target.dict()
+
+    def test_merging_dictionary_scalars_uses_custom_validation(self):
+        calls = []
+
+        class ValidatingConfigObj(ConfigObj):
+            def __setitem__(self, key, value, unrepr=False):
+                calls.append((key, unrepr))
+                if key == 'forbidden':
+                    raise ValueError('forbidden key')
+                super().__setitem__(key, value, unrepr=unrepr)
+
+        target = ValidatingConfigObj(unrepr=True)
+        target.merge(ConfigObj(["data = {'new': 2}"], unrepr=True))
+
+        assert calls == [('data', True)]
+        assert type(target['data']) is dict
+        assert target.scalars == ['data']
+        assert not target.sections
+        before = copy.deepcopy(target.dict())
+        with pytest.raises(ValueError, match='forbidden key'):
+            target.merge(ConfigObj(["forbidden = {'bad': 1}"], unrepr=True))
+        assert target.dict() == before
+        assert 'forbidden' not in target
 
     def test_dictionary_representation(self, a):
 
