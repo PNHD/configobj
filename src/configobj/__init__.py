@@ -755,11 +755,11 @@ class Section(dict):
         ConfigObj({'section1': {'option1': 'False', 'subsection': {'more_options': 'False'}}})
         """
         for key, val in list(indict.items()):
-            if (key in self and isinstance(self[key], dict) and
+            if (key in self and isinstance(self[key], Section) and
                                 isinstance(val, dict)):
                 self[key].merge(val)
             else:   
-                self[key] = val
+                self.__setitem__(key, val, unrepr=isinstance(indict, Section) and key in indict.scalars)
 
 
     def rename(self, oldkey, newkey):

@@ -743,6 +743,39 @@ def test_error_types():
 
 
 class TestSectionBehavior:
+    @pytest.mark.parametrize('nested', [False, True])
+    @pytest.mark.parametrize('original', [None, '{}', "{'old': 1}", "{'nested': {'old': 1}}"])
+    def test_merging_dictionary_scalars(self, nested, original):
+        prefix = ['[settings]'] if nested else []
+        target_lines = prefix + ["keep = 'target'"]
+        if original is not None:
+            target_lines.append('data = ' + original)
+        target = ConfigObj(target_lines, unrepr=True)
+        source = ConfigObj(prefix + ["data = {'new': 2}"], unrepr=True)
+        source_before = source.dict()
+
+        target.merge(source)
+
+        section = target['settings'] if nested else target
+        assert type(section['data']) is dict
+        assert section['data'] == {'new': 2}
+        assert section['keep'] == 'target'
+        assert 'data' in section.scalars
+        assert 'data' not in section.sections
+        assert ConfigObj(target.write(), unrepr=True).dict() == target.dict()
+        assert source.dict() == source_before
+
+    def test_merging_plain_dictionary_sections(self):
+        target = ConfigObj(['[settings]', 'keep = target', 'change = old'])
+
+        target.merge({'settings': {'change': 'new'}, 'added': {'value': 'new'}})
+
+        assert target.dict() == {
+            'settings': {'keep': 'target', 'change': 'new'},
+            'added': {'value': 'new'},
+        }
+        assert ConfigObj(target.write()).dict() == target.dict()
+
     def test_dictionary_representation(self, a):
 
         n = a.dict()
