@@ -758,8 +758,10 @@ class Section(dict):
             if (key in self and isinstance(self[key], Section) and
                                 isinstance(val, dict)):
                 self[key].merge(val)
-            else:   
-                self.__setitem__(key, val, unrepr=isinstance(indict, Section) and key in indict.scalars)
+            elif isinstance(val, dict) and isinstance(indict, Section) and key in indict.scalars:
+                self.__setitem__(key, val, unrepr=True)
+            else:
+                self[key] = val
 
 
     def rename(self, oldkey, newkey):

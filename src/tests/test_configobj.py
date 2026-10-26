@@ -776,6 +776,15 @@ class TestSectionBehavior:
         }
         assert ConfigObj(target.write()).dict() == target.dict()
 
+    def test_merging_with_a_custom_setitem(self):
+        class CustomConfigObj(ConfigObj):
+            def __setitem__(self, key, value):
+                super().__setitem__(key, value)
+
+        target = CustomConfigObj({'value': 'old'})
+        target.merge({'value': 'new'})
+        assert target['value'] == 'new'
+
     def test_dictionary_representation(self, a):
 
         n = a.dict()
