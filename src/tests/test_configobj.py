@@ -776,7 +776,7 @@ class TestSectionBehavior:
         }
         assert ConfigObj(target.write()).dict() == target.dict()
 
-    def test_merging_with_a_custom_setitem(self):
+    def test_merging_strings_with_a_two_argument_custom_setitem(self):
         class CustomConfigObj(ConfigObj):
             def __setitem__(self, key, value):
                 super().__setitem__(key, value)
@@ -812,6 +812,7 @@ class TestSectionBehavior:
 
         assert calls == [('data', True)]
         assert type(target['data']) is dict
+        assert target['data'] == {'new': 2}
         assert target.scalars == ['data']
         assert not target.sections
         before = copy.deepcopy(target.dict())

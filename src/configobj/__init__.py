@@ -532,6 +532,9 @@ class Section(dict):
         
         ``unrepr`` must be set when setting a value to a dictionary, without
         creating a new sub-section.
+
+        Custom overrides used to merge dictionary-valued scalars must accept
+        the ``unrepr`` keyword and forward it to the superclass.
         """
         if not isinstance(key, str):
             raise ValueError('The key "%s" is not a string.' % key)
